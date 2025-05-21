@@ -18,7 +18,15 @@ def clr_transform(df: pd.DataFrame, cols: list[str] = None, safe: bool = True, e
     """
     if cols is None:
         cols = df.select_dtypes(include=['number']).columns.tolist()
+    
+    # 创建结果 DataFrame，并首先复制 Label 和 Deposit 列
     res = pd.DataFrame(index=df.index)
+    if 'Label' in df.columns:
+        res['Label'] = df['Label']
+    if 'Deposit' in df.columns:
+        res['Deposit'] = df['Deposit']
+        
+    # 进行 CLR 变换
     for col in cols:
         arr = df[col].astype(float).values
         if safe:
@@ -27,6 +35,7 @@ def clr_transform(df: pd.DataFrame, cols: list[str] = None, safe: bool = True, e
             return pd.DataFrame(), f"CLR 变换失败: {col} 存在非正值"
         gm = gmean(arr)
         res[f"clr_{col}"] = np.log(arr / gm)
+    
     return res, "CLR 变换完成"
 
 def log_transform(df: pd.DataFrame, cols: list[str] = None, base: float = np.e, safe: bool = True, eps: float = 1e-9) -> tuple[pd.DataFrame, str]:
