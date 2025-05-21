@@ -51,6 +51,37 @@ def verify_dtype(
     else:
         return True, {}, "所有列 dtype 与预期一致"
 
+def verify_units(
+    df: pd.DataFrame,
+    expected_units: dict[str, str]
+) -> tuple[bool, dict[str, dict[str, str]], str]:
+    """
+    按给定的 units 映射校验 DataFrame 中各列的单位是否与预期一致。
+    
+    Args:
+        df: 原始 DataFrame
+        expected_units: 列名到预期单位的映射，例如:
+            {"SiO2": "wt%", "Rb": "ppm"}
+
+    Returns:
+        valid: 如果所有列单位都符合预期返回 True，否则 False
+        mismatch: {列名: {"actual": 实际单位, "expected": 预期单位}}
+        info: 执行结果描述
+    """
+    mismatch: dict[str, dict[str, str]] = {}
+    for col, exp_unit in expected_units.items():
+        if col not in df.columns:
+            mismatch[col] = {"actual": "<missing>", "expected": exp_unit}
+            continue
+        actual_unit = df[col].attrs.get('unit', None)
+        if actual_unit != exp_unit:
+            mismatch[col] = {
+                "actual": str(actual_unit),
+                "expected": exp_unit
+            }
+    if mismatch:
+        return False, mismatch, f"共发现 {len(mismatch)} 列 unit 与预期不符"
+    return True, {}, "所有列 unit 与预期一致"
 
 def handle_missing_values(df: pd.DataFrame, cols: list[str] = None, method: str = 'zero') -> tuple[pd.DataFrame, str]:
     """
