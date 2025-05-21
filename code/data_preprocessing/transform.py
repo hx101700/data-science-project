@@ -2,6 +2,34 @@ import numpy as np
 import pandas as pd
 from scipy.stats import gmean
 
+def harmonise_units(df: pd.DataFrame, target_unit: str = 'ppm') -> tuple[pd.DataFrame, str]:
+    """
+    单位统一：将 wt% 与 ppm 互换
+
+    Args:
+        df: 原始 DataFrame，每列需在 attrs 中设置 'unit' 为 'wt%' 或 'ppm'
+        target_unit: 目标单位，'ppm' 或 'wt%'
+    Returns:
+        tuple:
+            df_res: 单位转换后的 DataFrame
+            info: 执行信息
+    """
+    df_res = df.copy()
+    # 构建单位映射：仅包含在 attrs 中已标注单位的列
+    unit_map = {col: df_res[col].attrs.get('unit')
+                for col in df_res.columns if df_res[col].attrs.get('unit') in ['wt%', 'ppm']}
+    for col, unit in unit_map.items():
+        # 转换过程使用 to_numeric，遇到非数值自动置 NaN
+        series = pd.to_numeric(df_res[col], errors='coerce')
+        if unit == 'wt%' and target_unit == 'ppm':
+            df_res[col] = series * 10000
+            df_res[col].attrs['unit'] = 'ppm'
+        elif unit == 'ppm' and target_unit == 'wt%':
+            df_res[col] = series / 10000
+            df_res[col].attrs['unit'] = 'wt%'
+    return df_res, f"所有单位均同一至 {target_unit}"
+
+
 def clr_transform(df: pd.DataFrame, cols: list[str] = None, safe: bool = True, eps: float = 1e-9) -> tuple[pd.DataFrame, str]:
     """
     CLR 变换: ln(x / gmean(x))z
