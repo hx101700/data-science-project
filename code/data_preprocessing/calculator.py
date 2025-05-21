@@ -1,6 +1,4 @@
-import numpy as np
 import pandas as pd
-from scipy.stats import gmean
 
 def compute_ratios(df: pd.DataFrame, ratios: list[tuple[str, str]]) -> tuple[pd.DataFrame, str]:
     """
