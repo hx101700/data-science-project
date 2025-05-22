@@ -25,9 +25,9 @@ def train_svm_classifier(X: pd.DataFrame, y: pd.Series, test_size: float = 0.2, 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state)
     
     # 数据标准化
-    scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_train)
-    X_test_scaled = scaler.transform(X_test)
+    # scaler = StandardScaler()
+    # X_train_scaled = scaler.fit_transform(X_train)
+    # X_test_scaled = scaler.transform(X_test)
     
     # 定义参数网格
     param_grid = {
@@ -52,7 +52,7 @@ def train_svm_classifier(X: pd.DataFrame, y: pd.Series, test_size: float = 0.2, 
         'best_params': grid_search.best_params_,
         'best_score': grid_search.best_score_,
         'classification_report': classification_report(y_test, y_pred),
-        'confusion_matrix': confusion_matrix(y_test, y_pred, normalize=["all"], labels=["Cu", "Au"]),
+        'confusion_matrix': confusion_matrix(y_test, y_pred),
         'test_accuracy': best_model.score(X_test_scaled, y_test)
     }
     
