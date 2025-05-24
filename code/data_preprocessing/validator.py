@@ -25,6 +25,7 @@ def verify_dtype(
     Returns:
         valid: 如果所有列 dtype 都符合预期返回 True，否则 False
         mismatch: {列名: {"actual": 实际 dtype, "expected": 预期 dtype}}
+        code: 状态码，0 正常，1 警告，2 错误
         info: 执行结果描述
     """
     mismatch: dict[str, dict[str, str]] = {}
@@ -47,9 +48,9 @@ def verify_dtype(
             }
 
     if mismatch:
-        return False, mismatch, f"共发现 {len(mismatch)} 列 dtype 与预期不符"
+        return False, mismatch, 1, f"共发现 {len(mismatch)} 列 dtype 与预期不符"
     else:
-        return True, {}, "所有列 dtype 与预期一致"
+        return True, {}, 0, "所有列 dtype 与预期一致"
 
 def verify_units(
     df: pd.DataFrame,
@@ -66,6 +67,7 @@ def verify_units(
     Returns:
         valid: 如果所有列单位都符合预期返回 True，否则 False
         mismatch: {列名: {"actual": 实际单位, "expected": 预期单位}}
+        code: 状态码，0 正常，1 警告，2 错误
         info: 执行结果描述
     """
     mismatch: dict[str, dict[str, str]] = {}
@@ -80,8 +82,8 @@ def verify_units(
                 "expected": exp_unit
             }
     if mismatch:
-        return False, mismatch, f"共发现 {len(mismatch)} 列 unit 与预期不符"
-    return True, {}, "所有列 unit 与预期一致"
+        return False, mismatch, 1, f"共发现 {len(mismatch)} 列 unit 与预期不符"
+    return True, {}, 0, "所有列 unit 与预期一致"
 
 def handle_missing_values(df: pd.DataFrame, cols: list[str] = None, method: str = 'zero') -> tuple[pd.DataFrame, str]:
     """
@@ -92,9 +94,9 @@ def handle_missing_values(df: pd.DataFrame, cols: list[str] = None, method: str 
         cols: 要处理的列名列表，为 None 时自动识别所有数值列
         method: 'zero' 用 0 替换, 'median' 用中位数替换
     Returns:
-        tuple:
-            df: 处理后的 DataFrame
-            info: 执行信息
+        df: 处理后的 DataFrame
+        code: 状态码，0 正常，1 警告，2 错误
+        info: 执行信息
     """
     df_proc = df.copy()
     # 自动识别数值列
@@ -105,13 +107,13 @@ def handle_missing_values(df: pd.DataFrame, cols: list[str] = None, method: str 
     if cols is None:
         cols = num_cols
     if method not in ['zero', 'median']:
-        return df_proc, f"不支持的缺失值处理方法: {method}"
+        return df_proc, 1, f"不支持的缺失值处理方法: {method}"
     for col in cols:
         if method == 'zero':
             df_proc[col] = df_proc[col].fillna(0)
         else:
             df_proc[col] = df_proc[col].fillna(df_proc[col].median())
-    return df_proc, f"缺失值处理完成，使用方法: {method}"
+    return df_proc, 0, f"缺失值处理完成，使用方法: {method}"
 
 def flag_outliers(df: pd.DataFrame, cols: list[str] = None, z_thresh: float = 3.0) -> tuple[pd.DataFrame, str]:
     """
@@ -124,6 +126,7 @@ def flag_outliers(df: pd.DataFrame, cols: list[str] = None, z_thresh: float = 3.
     Returns:
         tuple:
             df: 带 'outlier_<col>' 标志列的 DataFrame
+            code: 状态码，0 正常，1 警告，2 错误
             info: 执行信息
     """
     df_proc = df.copy()
@@ -133,4 +136,4 @@ def flag_outliers(df: pd.DataFrame, cols: list[str] = None, z_thresh: float = 3.
         vals = df_proc[col].astype(float)
         z = np.abs(stats.zscore(vals, nan_policy='omit'))
         df_proc[f"outlier_{col}"] = z > z_thresh
-    return df_proc, f"异常值标记完成 (阈值: {z_thresh})"
+    return df_proc, 0, f"异常值标记完成 (阈值: {z_thresh})"

@@ -1,28 +1,40 @@
 import os
 import pandas as pd
 
-def load_data(filepath: str) -> tuple[pd.DataFrame, str]:
+def load_data(source) -> tuple[pd.DataFrame, int, str]:
     """
     根据文件后缀加载数据
 
     Args:
-        filepath: Excel 或 CSV 文件路径
+        source: Excel 或 CSV 文件流或者路径
     Returns:
-        tuple:
-            df: pandas.DataFrame
-            info: 执行信息，成功或错误描述
+        df: pandas.DataFrame
+        code: 状态码，0 正常，1 警告，2 错误
+        info: 执行信息，成功或错误描述
     """
-    ext = os.path.splitext(filepath)[1].lower()
+    if hasattr(source, "read"):
+        # Streamlit 上传的 file-like
+        buffer = source
+        filename = getattr(source, "name", "")
+    else:
+        # 本地路径
+        buffer = source
+        filename = str(source)
+
+    ext = os.path.splitext(filename)[1].lower()
     try:
-        if ext in ['.xls', '.xlsx']:
-            return pd.read_excel(filepath), f"Excel 文件 {filepath} 读取成功"
-        elif ext == '.csv':
-            return pd.read_csv(filepath), f"CSV 文件 {filepath} 读取成功"
+        if ext in [".xls", ".xlsx"]:
+            df = pd.read_excel(buffer)
+        elif ext == ".csv":
+            df = pd.read_csv(buffer)
         else:
-            return pd.DataFrame(), f"不支持的文件格式: {ext}"
+            return pd.DataFrame(), 2, f"不支持的文件格式：{ext}"
+
+        if df.empty:
+            return df, 1, f"文件“{filename}”读取成功，但内容为空"
+        return df, 0, f"文件“{filename}”读取成功，共 {df.shape[0]} 行，{df.shape[1]} 列"
+
     except FileNotFoundError:
-        return pd.DataFrame(), f"文件未找到: {filepath}"
-    except pd.errors.EmptyDataError:
-        return pd.DataFrame(), f"文件 {filepath} 为空"
+        return pd.DataFrame(), 2, f"文件未找到：{filename}"
     except Exception as e:
-        return pd.DataFrame(), f"读取文件 {filepath} 时发生错误: {e}"
+        return pd.DataFrame(), 2, f"读取文件“{filename}”时出错：{e}"
