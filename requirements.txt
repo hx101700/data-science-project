@@ -112,4 +112,4 @@ wheel==0.45.1
 wrapt==1.17.2
 xgboost==3.0.1
 zipp==3.21.0
-streamlit
+streamlit==1.45.1
