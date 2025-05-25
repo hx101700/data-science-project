@@ -2,6 +2,9 @@ import io
 import streamlit as st
 import pandas as pd
 from data_preprocessing.loader import load_data
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, roc_curve, auc, precision_recall_curve
+import matplotlib.pyplot as plt
+import numpy as np
 
 # 加载所有模型
 import joblib
@@ -130,14 +133,25 @@ with st.expander("Step 2：选择模型并预测", expanded=(st.session_state.st
         )
         # 预测按钮
         if st.button("开始预测"):
+            y = df_finial['Label']
+            y = np.where(y == "Au-rich PCDs", 0, 1)
+            X = df_finial.drop(['Label', 'Deposit'], axis=1)
             if model_choice == "随机森林":
                 model = rf_model
+                predictions = model.predict(X)
+                probas = model.predict_proba(X)[:, 1]
             elif model_choice == "深度学习":
                 model = dl_model
+                probas = model.predict(X).ravel()
+                predictions = (probas > 0.5).astype(int)
             elif model_choice == "支持向量机":
                 model = svm_model
+                predictions = model.predict(X)
+                probas = model.predict_proba(X)[:, 1]
             elif model_choice == "XGBoost":
                 model = xgb_model
+                probas = model.predict_proba(X)[:, 1]
+                predictions = model.predict(X)
             else:
                 st.error("未知模型")
                 model = None
@@ -145,10 +159,40 @@ with st.expander("Step 2：选择模型并预测", expanded=(st.session_state.st
             if model:
                 with st.spinner("预测中…"):
                     try:
-                        X = df_finial.drop(['Label', 'Deposit'], axis=1)
-                        y = df_finial['Label']
-                        predictions = model.predict(X)
-                        df_finial["预测结果"] = predictions
+                        df_finial["预测结果"] = np.where(predictions == 0, "富金", "富铜")
+                        
+                        # 生成混淆矩阵
+                        cm = confusion_matrix(y, predictions)
+                        fig_cm, ax_cm = plt.subplots()
+                        disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=["富金", "富铜"])
+                        disp.plot(cmap="Blues", ax=ax_cm)
+                        disp.ax_.set_title("Confusion Matrix")
+                        # 设置x轴刻度 x=["Au", "Cu"] y=["Cu", "Au"]
+                        ax_cm.set_xticklabels(["Au", "Cu"], rotation=45)
+                        ax_cm.set_yticklabels(["Au", "Cu"], rotation=45)
+                        st.pyplot(fig_cm)
+
+                        # 生成 ROC 曲线
+                        fpr, tpr, _ = roc_curve(y, probas)
+                        roc_auc = auc(fpr, tpr)
+                        fig_roc, ax_roc = plt.subplots()
+                        ax_roc.plot(fpr, tpr, label=f'ROC (AUC={roc_auc:.2f})')
+                        ax_roc.set_xlabel('False Positive Rate')
+                        ax_roc.set_ylabel('True Positive Rate')
+                        ax_roc.set_title('ROC Curve')
+                        ax_roc.legend()
+                        ax_roc.plot([0, 1], [0, 1], color='red', lw=2, linestyle='--')
+                        st.pyplot(fig_roc)
+
+                        # 生成 Precision–Recall 曲线
+                        precision, recall, _ = precision_recall_curve(y, probas)
+                        fig_pr, ax_pr = plt.subplots()
+                        ax_pr.plot(recall, precision, marker='.')
+                        ax_pr.set_xlabel('Recall')
+                        ax_pr.set_ylabel('Precision')
+                        ax_pr.set_title('Precision–Recall Curve')
+                        st.pyplot(fig_pr)
+                        
                         st.success("预测完成！")
                         st.dataframe(df_finial, use_container_width=True)
                     except Exception as e:
