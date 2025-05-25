@@ -6,3 +6,5 @@ seaborn
 xgboost
 shape
 keras-tuner
+streamlit
+tensorflow
