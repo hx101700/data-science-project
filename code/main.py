@@ -144,7 +144,7 @@ if st.session_state.step >= 2:
 
                     # 混淆矩阵
                     cm = confusion_matrix(y, predictions)
-                    fig_cm, ax_cm = plt.subplots(figsize=(4, 4), dpi=80)
+                    fig_cm, ax_cm = plt.subplots(figsize=(4, 4), dpi=400)
                     disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=["富金", "富铜"])
                     disp.plot(cmap="Blues", ax=ax_cm, colorbar=False)
                     disp.ax_.set_title("Confusion Matrix", fontsize=14)
@@ -161,7 +161,7 @@ if st.session_state.step >= 2:
 
                     fpr, tpr, _ = roc_curve(y, probas)
                     roc_auc = auc(fpr, tpr)
-                    fig_roc, ax_roc = plt.subplots(figsize=(4, 4), dpi=80)
+                    fig_roc, ax_roc = plt.subplots(figsize=(4, 4), dpi=400)
                     ax_roc.plot(fpr, tpr, label=f'ROC (AUC={roc_auc:.2f})')
                     ax_roc.set_xlabel('False Positive Rate', fontsize=12)
                     ax_roc.set_ylabel('True Positive Rate', fontsize=12)
@@ -175,7 +175,7 @@ if st.session_state.step >= 2:
                     buf_roc.seek(0)
 
                     precision, recall, _ = precision_recall_curve(y, probas)
-                    fig_pr, ax_pr = plt.subplots(figsize=(4, 4), dpi=80)
+                    fig_pr, ax_pr = plt.subplots(figsize=(4, 4), dpi=400)
                     ax_pr.plot(recall, precision, marker='.')
                     ax_pr.set_xlabel('Recall', fontsize=12)
                     ax_pr.set_ylabel('Precision', fontsize=12)
@@ -200,8 +200,8 @@ if st.session_state.step >= 2:
 
                     st.success("预测完成！")
 
-                    # 表格只显示8行，内部滚动
-                    rows_to_show = 8
+                    # 表格只显示7行，内部滚动
+                    rows_to_show = 7
                     row_height = 38
                     table_height = rows_to_show * row_height + 16  # 16 是表头和padding
                     st.dataframe(df_finial, use_container_width=True, height=table_height)
