@@ -166,6 +166,7 @@ with st.expander("Step 2：选择模型并预测", expanded=(st.session_state.st
                 predictions = (probas > 0.5).astype(int)
             elif model_choice == "支持向量机":
                 model = svm_model
+                y = df_finial['Label']
                 predictions = model.predict(X)
                 probas = model.predict_proba(X)[:, 1]
             elif model_choice == "XGBoost":
@@ -191,7 +192,10 @@ with st.expander("Step 2：选择模型并预测", expanded=(st.session_state.st
                         ax_cm.set_xticklabels(["Au", "Cu"], rotation=45)
                         ax_cm.set_yticklabels(["Au", "Cu"], rotation=45)
                         st.pyplot(fig_cm)
-
+                        
+                        y = df_finial['Label']
+                        y = np.where(y == "Au-rich PCDs", 0, 1)
+            
                         # 生成 ROC 曲线
                         fpr, tpr, _ = roc_curve(y, probas)
                         roc_auc = auc(fpr, tpr)
