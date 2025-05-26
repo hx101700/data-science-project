@@ -104,7 +104,7 @@ with st.expander("Step 1：上传测试文件", expanded=(st.session_state.step 
             st.dataframe(df, use_container_width=True)
             st.session_state.step = 2
 
-# ---- Step 2 预测与展示（不放任何expander，直接主页面） ----
+# ---- Step 2 预测与展示 ----
 if st.session_state.step >= 2:
     st.markdown("### Step 2：选择模型并预测")
     model_choice = st.selectbox(
@@ -141,7 +141,7 @@ if st.session_state.step >= 2:
                 try:
                     df_finial["预测结果"] = np.where(predictions == 0, "富金", "富铜")
 
-                    # 绘图（BytesIO）
+                    # 混淆矩阵
                     cm = confusion_matrix(y, predictions)
                     fig_cm, ax_cm = plt.subplots(figsize=(4, 4), dpi=80)
                     disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=["富金", "富铜"])
@@ -195,6 +195,12 @@ if st.session_state.step >= 2:
                         st.image(buf_pr, width=350)
 
                     st.success("预测完成！")
-                    st.dataframe(df_finial, use_container_width=True)
+
+                    # 表格只显示8行，内部滚动
+                    rows_to_show = 8
+                    row_height = 38
+                    table_height = rows_to_show * row_height + 16  # 16 是表头和padding
+                    st.dataframe(df_finial, use_container_width=True, height=table_height)
+
                 except Exception as e:
                     st.error(f"预测失败：{e}")
