@@ -10,46 +10,41 @@ import sys
 import os
 
 # 动态路径配置
-if getattr(sys, 'frozen', False):  # 打包后模式
-    base_dir = sys._MEIPASS        # PyInstaller 创建的临时目录
+if getattr(sys, 'frozen', False):
+    base_dir = sys._MEIPASS
     model_dir = os.path.join(base_dir, 'result')
-else:                          # 开发模式
+else:
     base_dir = os.path.dirname(os.path.abspath(__file__))
     model_dir = os.path.abspath(os.path.join(base_dir, '../result'))
 
-# 统一加载函数
 def load_model(model_name):
     model_path = os.path.join(model_dir, f'{model_name}.pkl')
-    print(f"Loading model from: {model_path}")  # 调试路径
+    print(f"Loading model from: {model_path}")
     return joblib.load(model_path)
 
-# 加载所有模型
 try:
     rf_model  = load_model('rf_model' )
-    dl_model  = load_model('dl_model' ) 
+    dl_model  = load_model('dl_model' )
     svm_model = load_model('svm_model')
     xgb_model = load_model('xgb_model')
 except Exception as e:
     print(f"模型加载失败: {str(e)}")
     raise
 
-# 页面配置
 st.set_page_config(
     page_title="data-science-project",
     layout="wide",
 )
 st.title("data-science-project")
 
-# 初始化会话状态
 if "step" not in st.session_state:
     st.session_state.step = 1
 
-# 缓存读取函数
 @st.cache_data(show_spinner=False, hash_funcs={io.BytesIO: lambda buf: hash(buf.getvalue())})
 def load_file(buffer: io.BytesIO):
     return load_data(buffer)
 
-# Step 1：上传并验证数据
+# ---- Step 1 上传 ----
 with st.expander("Step 1：上传测试文件", expanded=(st.session_state.step == 1)):
     uploaded = st.file_uploader(
         label="请选择 CSV / XLS / XLSX 文件",
@@ -59,9 +54,7 @@ with st.expander("Step 1：上传测试文件", expanded=(st.session_state.step 
         with st.spinner("加载中…"):
             buf = io.BytesIO(uploaded.getvalue()); buf.name = uploaded.name
             df, code, msg = load_file(buf)
-            # 1. 定义单位映射
             expected_units = {
-                # Major oxides (wt%)
                 'SiO2':  'wt%',
                 'TiO2':  'wt%',
                 'Al2O3':'wt%',
@@ -72,7 +65,6 @@ with st.expander("Step 1：上传测试文件", expanded=(st.session_state.step 
                 'Na2O':  'wt%',
                 'K2O':   'wt%',
                 'P2O5':  'wt%',
-                # Trace elements (ppm)
                 'Rb':  'ppm',  'Sr':  'ppm',  'Y':   'ppm',  'Zr':  'ppm',
                 'Nb':  'ppm',  'Ba':  'ppm',  'La':  'ppm',  'Ce':  'ppm',
                 'Pr':  'ppm',  'Nd':  'ppm',  'Sm':  'ppm',  'Eu':  'ppm',
@@ -80,57 +72,28 @@ with st.expander("Step 1：上传测试文件", expanded=(st.session_state.step 
                 'Er':  'ppm',  'Tm':  'ppm',  'Yb':  'ppm',  'Lu':  'ppm',
                 'Hf':  'ppm',  'Ta':  'ppm',  'Th':  'ppm',  'U':   'ppm'
             }
-
-            # 2. 为每一列设置 attrs['unit']
             for col, unit in expected_units.items():
                 if col in df.columns:
                     df[col].attrs['unit'] = unit
-
-            # 3. 验证设置是否成功
-            for col in expected_units:
-                if col in df.columns:
-                    print(f"{col}: unit = {df[col].attrs.get('unit')}")
-                    
             from data_preprocessing.validator import verify_dtype
-
             valid, error_location, code, info = verify_dtype(df, {"SiO2": "float64",})
-            
             from data_preprocessing.validator import verify_units
-
             valid, error_location, code, info = verify_units(df, expected_units)
-            
             from data_preprocessing.validator import handle_missing_values
-
             df_miss, code, info = handle_missing_values(df, method='zero')
-            
             from data_preprocessing.transform import clr_transform
             df_clr, code, info = clr_transform(df, ["SiO2", "TiO2", "Al2O3", "TFe2O3", "MnO", "MgO", "CaO", "Na2O", "K2O", "P2O5"])
-            
             from data_preprocessing.validator import flag_outliers
-
-            #
-            # 少可视化！
-            #
-            
             df_proc, code, info = flag_outliers(df_clr, z_thresh=3.0)
-            # 找出所有 outlier 列名
             outlier_cols = [c for c in df_proc.columns if c.startswith('outlier_')]
-            # 如果任意一列为 True，就保留该行
             mask = df_proc[outlier_cols].any(axis=1)
-            # 应用掩码
             outliers = df_proc[mask]
-            
             from data_preprocessing.transform import harmonise_units
-            # 把所有 unit='wt%' 的列统一转换为 ppm
             df_ppm, _, info = harmonise_units(df, target_unit='ppm')
-            
             from data_preprocessing.transform import log_transform
             df_log, _, linfo = log_transform(df_ppm, cols=['SiO2', 'Rb'], base=10)
-
-            # 去除异常值
             df_finial = df_proc[~mask]
             df_finial = df_finial.drop(columns=outlier_cols)
-            
         if code == 0:
             st.success(msg)
         elif code == 1:
