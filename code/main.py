@@ -104,83 +104,103 @@ with st.expander("Step 1：上传测试文件", expanded=(st.session_state.step 
             st.dataframe(df, use_container_width=True)
             st.session_state.step = 2
 
-with st.expander("Step 2：选择模型并预测", expanded=(st.session_state.step == 2)):
-    if st.session_state.step < 2:
-        st.info("请先完成 Step 1")
-    else:
-        # 选择模型
-        model_choice = st.selectbox(
-            label="请选择模型",
-            options=["随机森林", "深度学习", "支持向量机", "XGBoost"],
-            index=0,
-        )
-        # 预测按钮
-        if st.button("开始预测"):
-            y = df_finial['Label']
-            y = np.where(y == "Au-rich PCDs", 0, 1)
-            X = df_finial.drop(['Label', 'Deposit'], axis=1)
-            if model_choice == "随机森林":
-                model = rf_model
-                predictions = model.predict(X)
-                probas = model.predict_proba(X)[:, 1]
-            elif model_choice == "深度学习":
-                model = dl_model
-                probas = model.predict(X).ravel()
-                predictions = (probas > 0.5).astype(int)
-            elif model_choice == "支持向量机":
-                model = svm_model
-                y = df_finial['Label']
-                predictions = model.predict(X)
-                probas = model.predict_proba(X)[:, 1]
-            elif model_choice == "XGBoost":
-                model = xgb_model
-                probas = model.predict_proba(X)[:, 1]
-                predictions = model.predict(X)
-            else:
-                st.error("未知模型")
-                model = None
-            
-            if model:
-                with st.spinner("预测中…"):
-                    try:
-                        df_finial["预测结果"] = np.where(predictions == 0, "富金", "富铜")
-                        
-                        # 生成混淆矩阵
-                        cm = confusion_matrix(y, predictions)
-                        fig_cm, ax_cm = plt.subplots()
-                        disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=["富金", "富铜"])
-                        disp.plot(cmap="Blues", ax=ax_cm)
-                        disp.ax_.set_title("Confusion Matrix")
-                        # 设置x轴刻度 x=["Au", "Cu"] y=["Cu", "Au"]
-                        ax_cm.set_xticklabels(["Au", "Cu"], rotation=45)
-                        ax_cm.set_yticklabels(["Au", "Cu"], rotation=45)
-                        st.pyplot(fig_cm)
-                        
-                        y = df_finial['Label']
-                        y = np.where(y == "Au-rich PCDs", 0, 1)
-            
-                        # 生成 ROC 曲线
-                        fpr, tpr, _ = roc_curve(y, probas)
-                        roc_auc = auc(fpr, tpr)
-                        fig_roc, ax_roc = plt.subplots()
-                        ax_roc.plot(fpr, tpr, label=f'ROC (AUC={roc_auc:.2f})')
-                        ax_roc.set_xlabel('False Positive Rate')
-                        ax_roc.set_ylabel('True Positive Rate')
-                        ax_roc.set_title('ROC Curve')
-                        ax_roc.legend()
-                        ax_roc.plot([0, 1], [0, 1], color='red', lw=2, linestyle='--')
-                        st.pyplot(fig_roc)
+# ---- Step 2 预测与展示 ----
+if st.session_state.step >= 2:
+    st.markdown("### Step 2：选择模型并预测")
+    model_choice = st.selectbox(
+        label="请选择模型",
+        options=["随机森林", "深度学习", "支持向量机", "XGBoost"],
+        index=0,
+    )
+    if st.button("开始预测"):
+        y = df_finial['Label']
+        y = np.where(y == "Au-rich PCDs", 0, 1)
+        X = df_finial.drop(['Label', 'Deposit'], axis=1)
+        if model_choice == "随机森林":
+            model = rf_model
+            predictions = model.predict(X)
+            probas = model.predict_proba(X)[:, 1]
+        elif model_choice == "深度学习":
+            model = dl_model
+            probas = model.predict(X).ravel()
+            predictions = (probas > 0.5).astype(int)
+        elif model_choice == "支持向量机":
+            model = svm_model
+            predictions = model.predict(X)
+            probas = model.predict_proba(X)[:, 1]
+        elif model_choice == "XGBoost":
+            model = xgb_model
+            probas = model.predict_proba(X)[:, 1]
+            predictions = model.predict(X)
+        else:
+            st.error("未知模型")
+            model = None
 
-                        # 生成 Precision–Recall 曲线
-                        precision, recall, _ = precision_recall_curve(y, probas)
-                        fig_pr, ax_pr = plt.subplots()
-                        ax_pr.plot(recall, precision, marker='.')
-                        ax_pr.set_xlabel('Recall')
-                        ax_pr.set_ylabel('Precision')
-                        ax_pr.set_title('Precision–Recall Curve')
-                        st.pyplot(fig_pr)
-                        
-                        st.success("预测完成！")
-                        st.dataframe(df_finial, use_container_width=True)
-                    except Exception as e:
-                        st.error(f"预测失败：{e}")
+        if model:
+            with st.spinner("预测中…"):
+                try:
+                    df_finial["预测结果"] = np.where(predictions == 0, "富金", "富铜")
+
+                    # 混淆矩阵
+                    cm = confusion_matrix(y, predictions)
+                    fig_cm, ax_cm = plt.subplots(figsize=(4, 4), dpi=80)
+                    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=["富金", "富铜"])
+                    disp.plot(cmap="Blues", ax=ax_cm, colorbar=False)
+                    disp.ax_.set_title("Confusion Matrix", fontsize=14)
+                    ax_cm.set_xticklabels(["Au", "Cu"], rotation=45, fontsize=12)
+                    ax_cm.set_yticklabels(["Au", "Cu"], rotation=45, fontsize=12)
+                    plt.tight_layout()
+                    buf_cm = io.BytesIO()
+                    fig_cm.savefig(buf_cm, format="png", bbox_inches="tight")
+                    plt.close(fig_cm)
+                    buf_cm.seek(0)
+
+                    fpr, tpr, _ = roc_curve(y, probas)
+                    roc_auc = auc(fpr, tpr)
+                    fig_roc, ax_roc = plt.subplots(figsize=(4, 4), dpi=80)
+                    ax_roc.plot(fpr, tpr, label=f'ROC (AUC={roc_auc:.2f})')
+                    ax_roc.set_xlabel('False Positive Rate', fontsize=12)
+                    ax_roc.set_ylabel('True Positive Rate', fontsize=12)
+                    ax_roc.set_title('ROC Curve', fontsize=14)
+                    ax_roc.legend()
+                    ax_roc.plot([0, 1], [0, 1], color='red', lw=2, linestyle='--')
+                    plt.tight_layout()
+                    buf_roc = io.BytesIO()
+                    fig_roc.savefig(buf_roc, format="png", bbox_inches="tight")
+                    plt.close(fig_roc)
+                    buf_roc.seek(0)
+
+                    precision, recall, _ = precision_recall_curve(y, probas)
+                    fig_pr, ax_pr = plt.subplots(figsize=(4, 4), dpi=80)
+                    ax_pr.plot(recall, precision, marker='.')
+                    ax_pr.set_xlabel('Recall', fontsize=12)
+                    ax_pr.set_ylabel('Precision', fontsize=12)
+                    ax_pr.set_title('Precision–Recall Curve', fontsize=14)
+                    plt.tight_layout()
+                    buf_pr = io.BytesIO()
+                    fig_pr.savefig(buf_pr, format="png", bbox_inches="tight")
+                    plt.close(fig_pr)
+                    buf_pr.seek(0)
+
+                    # 横向分三列展示
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.markdown("#### 混淆矩阵")
+                        st.image(buf_cm, width=350)
+                    with col2:
+                        st.markdown("#### ROC 曲线")
+                        st.image(buf_roc, width=350)
+                    with col3:
+                        st.markdown("#### Precision–Recall 曲线")
+                        st.image(buf_pr, width=350)
+
+                    st.success("预测完成！")
+
+                    # 表格只显示8行，内部滚动
+                    rows_to_show = 8
+                    row_height = 38
+                    table_height = rows_to_show * row_height + 16  # 16 是表头和padding
+                    st.dataframe(df_finial, use_container_width=True, height=table_height)
+
+                except Exception as e:
+                    st.error(f"预测失败：{e}")
