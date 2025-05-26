@@ -5,13 +5,33 @@ from data_preprocessing.loader import load_data
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, roc_curve, auc, precision_recall_curve
 import matplotlib.pyplot as plt
 import numpy as np
+import joblib
+import sys
+import os
+
+# 动态路径配置
+if getattr(sys, 'frozen', False):  # 打包后模式
+    base_dir = sys._MEIPASS        # PyInstaller 创建的临时目录
+    model_dir = os.path.join(base_dir, 'result')
+else:                          # 开发模式
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    model_dir = os.path.abspath(os.path.join(base_dir, '../result'))
+
+# 统一加载函数
+def load_model(model_name):
+    model_path = os.path.join(model_dir, f'{model_name}.pkl')
+    print(f"Loading model from: {model_path}")  # 调试路径
+    return joblib.load(model_path)
 
 # 加载所有模型
-import joblib
-rf_model = joblib.load("./result/rf_model.pkl")
-dl_model = joblib.load("./result/dl_model.pkl")
-svm_model = joblib.load("./result/svm_model.pkl")
-xgb_model = joblib.load("./result/xgb_model.pkl")
+try:
+    rf_model  = load_model('rf_model' )
+    dl_model  = load_model('dl_model' ) 
+    svm_model = load_model('svm_model')
+    xgb_model = load_model('xgb_model')
+except Exception as e:
+    print(f"模型加载失败: {str(e)}")
+    raise
 
 # 页面配置
 st.set_page_config(
