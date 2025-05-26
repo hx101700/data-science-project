@@ -126,6 +126,7 @@ if st.session_state.step >= 2:
             predictions = (probas > 0.5).astype(int)
         elif model_choice == "支持向量机":
             model = svm_model
+            y = df_finial['Label']
             predictions = model.predict(X)
             probas = model.predict_proba(X)[:, 1]
         elif model_choice == "XGBoost":
@@ -154,6 +155,9 @@ if st.session_state.step >= 2:
                     fig_cm.savefig(buf_cm, format="png", bbox_inches="tight")
                     plt.close(fig_cm)
                     buf_cm.seek(0)
+                    
+                    y = df_finial['Label']
+                    y = np.where(y == "Au-rich PCDs", 0, 1)
 
                     fpr, tpr, _ = roc_curve(y, probas)
                     roc_auc = auc(fpr, tpr)
