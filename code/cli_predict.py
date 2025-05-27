@@ -28,17 +28,24 @@ if __name__ == "__main__":
         sys.exit(stcli.main())
     else:
         os.environ["BROWSER"] = "none"
+        os.environ["STREAMLIT_SERVER_HEADLESS"] = "true"
         os.environ["_LAUNCHED_BY_STREAMLIT"] = "1"
         main_py = resource_path("main.py")
         port = 8501
-        cmd = [sys.executable, "-m", "streamlit", "run", main_py, "--server.port", str(port)]
+        cmd = [
+            sys.executable, "-m", "streamlit", "run",
+            main_py,
+            "--server.port", str(port),
+            "--server.headless", "true"
+        ]
 
         print("启动命令：", cmd)
         if sys.platform == "win32":
             p = subprocess.Popen(cmd, creationflags=subprocess.CREATE_NO_WINDOW)
         else:
             p = subprocess.Popen(cmd)
-        # 只自动打开一次浏览器
+
+        # 只由外部进程自动弹一次浏览器
         max_wait = 15
         for i in range(max_wait):
             if is_port_open(port):

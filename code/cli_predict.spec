@@ -11,8 +11,6 @@ a = Analysis(
         ('modeling', 'modeling'),
         ('visualization', 'visualization'),
         ('modes_result', 'modes_result'),
-        ('../executable', 'executable'),
-
     ],
     hiddenimports=[
         'numpy', 'pandas', 'matplotlib', 'seaborn',
@@ -46,7 +44,7 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=False,  #False（隐藏控制台）
+    console=True,  #False（隐藏控制台）
 )
 
 coll = COLLECT(
