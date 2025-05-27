@@ -251,7 +251,7 @@ with st.expander("Step 2：模型选择与预测", expanded=(st.session_state.st
 
                         # 浏览器下载按钮
                         st.download_button(
-                            label="网页端下载预测结果（CSV）",
+                            label="网页端再次下载预测结果（CSV）",
                             data=csv_bytes,
                             file_name=filename,
                             mime="text/csv"
@@ -264,7 +264,7 @@ with st.expander("Step 2：模型选择与预测", expanded=(st.session_state.st
                         result_path = os.path.join(result_dir, filename)
                         with open(result_path, 'wb') as f:
                             f.write(csv_bytes)
-                        st.success(f"预测结果已保存到 {result_path}")
+                        st.success(f"注：预测结果已在预测结束时自动保存到 {result_path}")
                         st.session_state.step = 3
                             
                     except Exception as e:
