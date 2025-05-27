@@ -24,7 +24,7 @@ a = Analysis(
         'shap',
         'streamlit',
     ],
-    hookspath=[],
+    hookspath=['./hooks'],
     runtime_hooks=[],
     excludes=[],
     win_no_prefer_redirects=False,
