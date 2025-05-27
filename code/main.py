@@ -59,7 +59,7 @@ def load_model(model_name: str):
         base_dir = sys._MEIPASS
     else:
         base_dir = os.path.dirname(os.path.abspath(__file__))
-    model_dir = os.path.abspath(os.path.join(base_dir, '../result'))
+    model_dir = os.path.abspath(os.path.join(base_dir, './modes_result'))
     path = os.path.join(model_dir, f'{model_name}.pkl')
     return joblib.load(path)
 
@@ -258,7 +258,7 @@ with st.expander("Step 2：模型选择与预测", expanded=(st.session_state.st
                         )
                         
                         # 保存csv至当前文件夹下的result文件夹
-                        result_dir = os.path.join(os.path.dirname(__file__), 'result')
+                        result_dir = os.path.join(os.path.dirname(__file__), 'result_csv')
                         if not os.path.exists(result_dir):
                             os.makedirs(result_dir)
                         result_path = os.path.join(result_dir, filename)
