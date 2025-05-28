@@ -137,7 +137,7 @@ class DataScienceApp(tk.Tk):
             buffer.name = os.path.basename(path)
             df_raw, code, msg = load_data(buffer)
             self._log('info', f"load_data: {msg}")
-            # 显示“原始数据”
+            
             self._populate_table(self.step_frames['原始数据'], df_raw)
 
             expected_units = {
@@ -274,7 +274,7 @@ class DataScienceApp(tk.Tk):
             return
         self._log('info', '开始预测')
 
-        # 局部拷贝，避免反复在 self.df 上添加“预测结果”列
+        # 局部拷贝
         df_work = self.df.copy()
 
         # 真值 y_true_num
@@ -373,15 +373,12 @@ class DataScienceApp(tk.Tk):
     def _populate_result_table(self, df: pd.DataFrame):
         parent = self.result_table.master
 
-        # —— 1. 清除 parent 下所有子控件 —— #
         for w in parent.winfo_children():
             w.destroy()
 
-        # —— 2. 新建 container —— #
         container = ttk.Frame(parent)
         container.pack(fill='both', expand=True)
 
-        # —— 3. 构建新的 Treeview —— #
         cols = list(df.columns)
         tree = ttk.Treeview(container, columns=cols, show='headings')
         tree.grid(row=0, column=0, sticky='nsew')
@@ -395,21 +392,17 @@ class DataScienceApp(tk.Tk):
         for _, row in df.iterrows():
             tree.insert('', tk.END, values=list(row))
 
-        # —— 垂直滚动条 —— #
         vsb = ttk.Scrollbar(container, orient='vertical', command=tree.yview)
         vsb.grid(row=0, column=1, sticky='ns')
         tree.configure(yscrollcommand=vsb.set)
 
-        # —— 水平滚动条 —— #
         hsb = ttk.Scrollbar(container, orient='horizontal', command=tree.xview)
         hsb.grid(row=1, column=0, sticky='ew')
         tree.configure(xscrollcommand=hsb.set)
 
-        # 让 grid 区域随窗口伸缩
         container.grid_rowconfigure(0, weight=1)
         container.grid_columnconfigure(0, weight=1)
 
-        # 保存引用，以便下一次重建或清除
         self.result_table = tree
 
     def _save_results(self, df: pd.DataFrame):
