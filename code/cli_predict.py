@@ -8,7 +8,8 @@ import socket
 def resource_path(relative):
     if hasattr(sys, '_MEIPASS'):
         return os.path.join(sys._MEIPASS, relative)
-    return os.path.join(os.path.abspath("."), relative)
+    # 关键写法，定位到exe或py的实际目录
+    return os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), relative)
 
 def is_port_open(port):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -28,18 +29,25 @@ if __name__ == "__main__":
         sys.exit(stcli.main())
     else:
         os.environ["BROWSER"] = "none"
+        os.environ["STREAMLIT_SERVER_HEADLESS"] = "true"
         os.environ["_LAUNCHED_BY_STREAMLIT"] = "1"
         main_py = resource_path("main.py")
         port = 8501
-        cmd = [sys.executable, "-m", "streamlit", "run", main_py, "--server.port", str(port)]
+        cmd = [
+            sys.executable, "-m", "streamlit", "run",
+            main_py,
+            "--server.port", str(port),
+            "--server.headless", "true"
+        ]
 
         print("启动命令：", cmd)
         if sys.platform == "win32":
             p = subprocess.Popen(cmd, creationflags=subprocess.CREATE_NO_WINDOW)
         else:
             p = subprocess.Popen(cmd)
-        # 只自动打开一次浏览器
-        max_wait = 15
+
+        # 自动弹一次浏览器
+        max_wait = 30
         for i in range(max_wait):
             if is_port_open(port):
                 webbrowser.open(f"http://localhost:{port}")
