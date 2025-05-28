@@ -406,15 +406,30 @@ class DataScienceApp(tk.Tk):
         self.result_table = tree
 
     def _save_results(self, df: pd.DataFrame):
-        file_path = filedialog.asksaveasfilename(defaultextension='.csv',
-                                                 filetypes=[('CSV文件','*.csv')],
-                                                 initialfile=f"predictions_{datetime.now():%Y%m%d_%H%M%S}.csv")
+        if df.empty:
+            messagebox.showwarning('警告', '没有可保存的预测结果')
+            return
+        # 获取并格式化模型名称，用于文件名
+        model_name = self.model_var.get().replace(' ', '_')  # e.g. "随机森林" -> "随机森林"
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        default_name = f"predictions_{model_name}_{timestamp}.csv"
+
+        # 弹出“另存为”对话框，默认文件名包含模型名
+        file_path = filedialog.asksaveasfilename(
+            defaultextension='.csv',
+            filetypes=[('CSV 文件', '*.csv')],
+            initialfile=default_name
+        )
         if file_path:
             df.to_csv(file_path, index=False)
             self._log('info', f"预测结果已保存: {file_path}")
+
+        # 自动保存到本地 result_csv 文件夹
         result_dir = os.path.join(os.path.dirname(__file__), 'result_csv')
         os.makedirs(result_dir, exist_ok=True)
-        auto_path = os.path.join(result_dir, os.path.basename(file_path) if file_path else f"predictions_{datetime.now():%Y%m%d_%H%M%S}.csv")
+        # 如果用户取消了另存，则使用 default_name
+        auto_filename = os.path.basename(file_path) if file_path else default_name
+        auto_path = os.path.join(result_dir, auto_filename)
         df.to_csv(auto_path, index=False)
         self._log('info', f"自动保存至: {auto_path}")
 
