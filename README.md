@@ -118,6 +118,27 @@
 └── 📜 README.md                                              # 项目说明文档
 
 ```
+## 四、工程运行方式
+### 1. 需要环境依赖（Linux\Win Python）
+#### run_for_linux.sh
+1. 运行环境Linux Conda Python3.11 -直接运行工程
+2. 依赖安装:pip install -r '../requirements/requirements_for_linux_conda_py311.txt'
+3. 运行指令:在./code/script目录下执行 ./run_for_linux.sh(如果权限有问题：执行chmod +x run_for_linux.sh)
+
+#### run_for_win.bat
+1. 运行环境win Conda Python3.10 -直接运行工程
+2. 依赖安装:pip install -r '../requirements/requirements_for_win_conda_py310.txt'
+3. 运行指令:在./code/script目录下执行 ./run_for_win.bat(如果权限有问题：执行chmod +x run_for_win.bat)
+
+#### 无脚本参与
+1. 运行环境win/linux Conda Python
+2. 运行目录：在./code 文件夹下执行
+3. 方式1：streamlit run main.py启动steamlit服务窗口
+4. 方式2：python cli_predict.py启动GUI服务窗口
+
+### 2.无环境依赖
+1. 双击提供的EXE可执行程序
+2. 注意：启动加载程序根据机器不同需要一定时间，请耐心等待控制终端开始log输出，并弹出GUI界面
 
 ## 注意事项
 
