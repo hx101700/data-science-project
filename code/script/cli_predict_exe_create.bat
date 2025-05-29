@@ -4,7 +4,7 @@ cd /d %~dp0
 
 REM Define output paths
 set "APP_EXE_ROOT=..\..\executable\cli_predict_exe"
-set "DIST_DIR=%APP_EXE_ROOT%\dist"
+set "DIST_DIR=%APP_EXE_ROOT%"
 set "BUILD_DIR=%APP_EXE_ROOT%\build"
 
 REM Create target directories if they do not exist
@@ -17,7 +17,7 @@ if exist "%DIST_DIR%" (rmdir /s /q "%DIST_DIR%")
 if exist "%BUILD_DIR%" (rmdir /s /q "%BUILD_DIR%")
 
 REM Run PyInstaller using the spec file from the parent directory
-pyinstaller ..\cli_predict.spec --distpath "%DIST_DIR%" --workpath "%BUILD_DIR%" --clean
+pyinstaller ../cli_predict.spec --distpath "%DIST_DIR%" --workpath "%BUILD_DIR%" --clean
 
 echo ========================================
 echo Build complete!
